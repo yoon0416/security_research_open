@@ -16,6 +16,7 @@ DFIR(Digital Forensics & Incident Response) 및 Offensive Security 연구 프로
 | 2   | [Forensic Artifact Research](#2-forensic-artifact-research)                 | DFIR + Offensive | Windows / macOS      | AI 대화 복구, 메신저 추출, 힙 메모리 잔존 실증 |
 | 3   | [BLE Surveillance Radar](#3-ble-surveillance-radar--capability-study)       | Offensive        | iOS (iPhone) + macOS | iPhone 전환 완료 (ARKit + BLE + 나침반) |
 | 4   | [iOS AFU Imaging Research](#4-ios-afu-imaging-research)                     | Offensive / DFIR | iOS                  | **USB + 페어링만으로 실 데이터 추출 달성 — iOS 26.4.2 미패치 확정** |
+| 5   | [iOS Backup Forensic Research](#5-ios-backup-forensic-research)             | DFIR             | iOS encrypted backup | 79개 앱 중 15개 분석 완료. 보호 모델별 9개 paradigm 도출 — 진행 중 |
 
 - [Upcoming Research](#upcoming-research)
 - [Non-Public](#non-public)
@@ -164,6 +165,82 @@ Apple Bug Bounty 제출 예정으로 구체적인 접근 방향은 공개하지 
 **3. 역분석 심화**
 
 확보된 iOS dyld shared cache 기반으로 관련 시스템 바이너리 역분석 진행 예정이다.
+
+---
+
+## 5. iOS Backup Forensic Research
+
+**대상 환경**: iOS encrypted backup (iTunes / Finder backup) + macOS 분석 환경
+
+본인 소유 iPhone의 암호화 백업에서 앱별 사용자 행위 흔적이 어디까지, 어떤 형태로 잔존하는지를 다회차로 검증하는 연구. 단일 앱 보안이 강해도 사용자 행위는 디바이스 전체에 분산되어 남을 수 있다는 가정 하에, 79개 앱 폴더 중 15개를 분석 완료했고 보호 모델별 9개 paradigm을 도출했다.
+
+### 전제 조건
+
+- 본인 소유 iPhone의 **암호화 백업** (iTunes / Finder)
+- 백업 비밀번호 보유 (Manifest.db + Keybag unlock 용)
+- macOS 분석 환경
+
+### 앱별 현재 회수 가능 수준 (15 / 79)
+
+본인 iPhone 암호화 백업을 macOS에서 분석했을 때, 각 앱에서 *지금까지 어디까지 추출이 확인되었는지* 일반 독자 기준 요약. 더 깊은 회수는 연구 중.
+
+#### 핀테크
+
+| 앱 | 현재 회수 가능 | 연구 중 |
+|---|---|---|
+| **Toss (토스)** | 전체 보유 계좌 list + 각 계좌 잔액, 카드/대출 카탈로그, 마지막 송금한 사람 계좌, 토스증권 위탁계좌 + 보유 종목 관심 list, 토스 user ID, 최근 검색어, 친구 list, 토스 알림 다수, 카드 결제 알림 (가맹점·금액·일시·끝번호), 자동이체 등록 흐름 | 송금 *받은 사람 + 금액*, 매수/매도 *수량·가격* 같은 원본 거래 timeline 본문 — 회수 시도 진행 중 |
+| **KB Pay (KB국민카드)** | 사용자 실명, 보유 카드 종류, KB 그룹 16앱 ARS 정책, APNS 토큰, 가맹점 사용 location 데이터, 결제 알림 cycle | 카드 거래 원본 row (구매 상세 timeline) — 연구 중 |
+| **KakaoBank (카카오뱅크)** | 앱 설치 기능 카탈로그 60+ 종, 클립보드 사용 횟수, 인앱 화면 사용 메타 | 거래 원장 / 잔액 / 송금 본문 — 연구 중 |
+
+#### 메신저 / 메일 / 협업
+
+| 앱 | 현재 회수 가능 | 연구 중 |
+|---|---|---|
+| **KakaoTalk (카카오톡)** | **대화 본문 추출 가능** — 213,901 메시지 중 90.9% 평문 복원 성공. 사용자가 가입한 모든 방, 친구 list, 닉네임 이력, 시간대별 메시지 distribution | 잔여 9.1% (특정 방 / 특정 메시지 type) — 연구 중 |
+| **Microsoft Teams** | 사용자가 받은 알림 메타 (thread ID, 조직 ID, 알림 본문 글자수 까지), Microsoft 365 cross-app 흔적 (Excel 한국어 sheet 이름까지 cache), Intune MAM 등록 흔적, 1차 앱 6종 카탈로그 | 메시지 본문 자체 (알림 처리 시점 키 부재) — 연구 중 |
+| **Gmail** | 사용자가 로그인한 6개 Google 계정 매핑, 18개 최근 이메일 미리보기 (제목·발신자·시각), 22명 자동완성 연락처, push 토큰 3종, Meet/Tasks/Drive 활성화 상태 | 이메일 본문 — 연구 중 |
+| **Discord** | 참여한 서버 list, 친구 affinity 점수 1,242명, 음성 채널 동참자 491명, MMKV 잔존으로 키스트로크 draft 일부 복원 | 메시지 원본 본문 — 연구 중 |
+| **Instagram** | DM thread 메타 (sender / timestamp / 모드), 사용자 계정 활동 흔적 | DM 본문 (iOS 백업에서 제외 처리됨) — 연구 중 |
+
+#### AI
+
+| 앱 | 현재 회수 가능 | 연구 중 |
+|---|---|---|
+| **ChatGPT** | **전부 추출 가능** — 모든 대화 본문, 대화 제목 list, 첨부 파일, 사용자 계정 매핑 4종 | (현재 회수 한계 없음) |
+| **Gemini** | 사용자가 방문한 origin host 14개, 계정 매핑, 사용 흔적 메타 | 대화 본문 (디스크 미저장 schema) — 연구 중 |
+
+#### 포털 / 이커머스 / SNS
+
+| 앱 | 현재 회수 가능 | 연구 중 |
+|---|---|---|
+| **Naver (네이버)** | 검색 keyword 이력, 방문 URL 이력, 계정 정보 3축 모두 평문 회수 | 네이버 비밀 채팅 (`_cmc_secure_chat.sqlite`) — 연구 중 |
+| **Coupang (쿠팡)** | 사용자 계정 JWT (memberSrl + 디바이스 모델 + 가족 2 프로필 등 전수), 검색 keyword 30건, 사용 패턴 timeline, 소스 IP, Akamai 토큰 | 주문 detail 본문, ENCRYPTED_* 자체 암호화 field — 연구 중 |
+| **Everytime (에브리타임)** | 사용자 학적 메타 (school_id/campus_id/enter_year/enrollment), PostHog 큐 214건, 모션센서 fingerprint, AuthCredential 평문 | 게시글 본문 (디스크 미저장 schema) — 연구 중 |
+
+#### 본인인증 / 가상자산
+
+| 앱 | 현재 회수 가능 | 연구 중 |
+|---|---|---|
+| **KTAuth (KT PASS)** | 디바이스 식별자 3종, 등록된 인증 방식 2가지 (Face ID + PIN, FIDO AAID 포함), 사용 timeline (Adobe Lifecycle), 13개 KT 서비스 catalog | 핵심 본인인증 PII (실명·생년월일·CI/DI) — 자체 암호화로 보호, 연구 중 |
+| **Upbit (업비트)** | 사용자 모드 (게스트 vs 로그인), Apple App Attest 인증서 (iOS 버전 + Team ID), 위젯 BTC fetch 9회 흔적 | 거래 history / 자산 본문 — 연구 중 |
+
+64개 추가 앱 분석 진행 중 — 한국 사용자 일상 앱 풀 (모빌리티 / 숙박 / 미디어 / 생산성 / 추가 핀테크 / 추가 메신저 등).
+
+### iOS 버전별 재현 여부
+
+| iOS 버전 | 상태 |
+|---|---|
+| iOS 18.x 백업 | 검증 |
+| iOS 26.x 백업 | 검증 — 진행 중 |
+
+### 다음 목표
+
+- 미분석 앱 64개 추가 (한국 사용자 일상 앱 풀 — 모빌리티 / 숙박 / 미디어 / 생산성 / 추가 핀테크)
+- 다회차 분석을 통한 cross-domain pivoting 확장 (단일 앱 도메인이 보호되어도 시스템 도메인 + 다른 앱 백업에서 동일 사용자 활동 재구성)
+- 앱별 보호 paradigm 매트릭스 갱신 + 신규 paradigm 후보 식별
+- 반복 사용 분석 패턴의 도구화
+
+분석 알고리즘, 추출 스크립트, 사용자 데이터 샘플, 보고서 본문 등 기술 세부는 비공개로 유지한다.
 
 ---
 
