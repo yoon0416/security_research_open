@@ -16,7 +16,7 @@ DFIR(Digital Forensics & Incident Response) 및 Offensive Security 연구 프로
 | 2   | [Forensic Artifact Research](#2-forensic-artifact-research)                 | DFIR + Offensive | Windows / macOS      | AI 대화 복구, 메신저 추출, 힙 메모리 잔존 실증 |
 | 3   | [BLE Surveillance Radar](#3-ble-surveillance-radar--capability-study)       | Offensive        | iOS (iPhone) + macOS | iPhone 전환 완료 (ARKit + BLE + 나침반) |
 | 4   | [iOS AFU Imaging Research](#4-ios-afu-imaging-research)                     | Offensive / DFIR | iOS                  | **USB + 페어링만으로 실 데이터 추출 달성 — iOS 26.4.2 미패치 확정** |
-| 5   | [iOS Backup Forensic Research](#5-ios-backup-forensic-research)             | DFIR             | iOS encrypted backup | 79개 앱 중 15개 분석 완료. 보호 모델별 9개 paradigm 도출 — 진행 중 |
+| 5   | [iOS Backup Forensic Research](#5-ios-backup-forensic-research)             | DFIR             | iOS encrypted backup | 79개 앱 중 18개 분석 완료. 보호 모델별 11개 paradigm 도출 — 진행 중 |
 
 - [Upcoming Research](#upcoming-research)
 - [Non-Public](#non-public)
@@ -172,7 +172,7 @@ Apple Bug Bounty 제출 예정으로 구체적인 접근 방향은 공개하지 
 
 **대상 환경**: iOS encrypted backup (iTunes / Finder backup) + macOS 분석 환경
 
-본인 소유 iPhone의 암호화 백업에서 앱별 사용자 행위 흔적이 어디까지, 어떤 형태로 잔존하는지를 다회차로 검증하는 연구. 단일 앱 보안이 강해도 사용자 행위는 디바이스 전체에 분산되어 남을 수 있다는 가정 하에, 79개 앱 폴더 중 15개를 분석 완료했고 보호 모델별 9개 paradigm을 도출했다.
+본인 소유 iPhone의 암호화 백업에서 앱별 사용자 행위 흔적이 어디까지, 어떤 형태로 잔존하는지를 다회차로 검증하는 연구. 단일 앱 보안이 강해도 사용자 행위는 디바이스 전체에 분산되어 남을 수 있다는 가정 하에, 79개 앱 폴더 중 18개를 분석 완료했고 보호 모델별 11개 paradigm을 도출했다.
 
 ### 전제 조건
 
@@ -180,7 +180,7 @@ Apple Bug Bounty 제출 예정으로 구체적인 접근 방향은 공개하지 
 - 백업 비밀번호 보유 (Manifest.db + Keybag unlock 용)
 - macOS 분석 환경
 
-### 앱별 현재 회수 가능 수준 (15 / 79)
+### 앱별 현재 회수 가능 수준 (18 / 79)
 
 본인 iPhone 암호화 백업을 macOS에서 분석했을 때, 각 앱에서 *지금까지 어디까지 추출이 확인되었는지* 일반 독자 기준 요약. 더 깊은 회수는 연구 중.
 
@@ -201,6 +201,7 @@ Apple Bug Bounty 제출 예정으로 구체적인 접근 방향은 공개하지 
 | **Gmail** | 사용자가 로그인한 6개 Google 계정 매핑, 18개 최근 이메일 미리보기 (제목·발신자·시각), 22명 자동완성 연락처, push 토큰 3종, Meet/Tasks/Drive 활성화 상태 | 이메일 본문 — 연구 중 |
 | **Discord** | 참여한 서버 list, 친구 affinity 점수 1,242명, 음성 채널 동참자 491명, MMKV 잔존으로 키스트로크 draft 일부 복원 | 메시지 원본 본문 — 연구 중 |
 | **Instagram** | DM thread 메타 (sender / timestamp / 모드), 사용자 계정 활동 흔적 | DM 본문 (iOS 백업에서 제외 처리됨) — 연구 중 |
+| **WhatsApp** | Meta 사용자 ID, Meta family 공유 디바이스 ID (Facebook/Instagram와 동일 디바이스 매칭 가능), 디바이스 모델·OS build·국가·언어, 앱 등록·복구 토큰, Apple Watch 알림 sync 흔적 | 대화 본문 (iOS 로컬 백업에서 제외, iCloud 별도 채널) — 연구 중 |
 
 #### AI
 
@@ -217,14 +218,21 @@ Apple Bug Bounty 제출 예정으로 구체적인 접근 방향은 공개하지 
 | **Coupang (쿠팡)** | 사용자 계정 JWT (memberSrl + 디바이스 모델 + 가족 2 프로필 등 전수), 검색 keyword 30건, 사용 패턴 timeline, 소스 IP, Akamai 토큰 | 주문 detail 본문, ENCRYPTED_* 자체 암호화 field — 연구 중 |
 | **Everytime (에브리타임)** | 사용자 학적 메타 (school_id/campus_id/enter_year/enrollment), PostHog 큐 214건, 모션센서 fingerprint, AuthCredential 평문 | 게시글 본문 (디스크 미저장 schema) — 연구 중 |
 
+#### 클라우드 스토리지
+
+| 앱 | 현재 회수 가능 | 연구 중 |
+|---|---|---|
+| **Google Drive** | 한 디바이스에 로그인된 적 있는 Google 계정 7개의 사용자 ID 모두 평문, active 계정의 Gmail 주소 + 프로필 사진 매핑, 사용자가 Drive에서 코멘트 처리한 문서 100건의 internal ID, 디바이스 모델·국가·timezone·앱 버전, push 알림 등록 토큰 14종, 계정 권한 flag (consumer tier 여부 등) | 본문 파일 자체 (사용자가 offline 사용을 지정하지 않아 백업에 미포함), OAuth refresh token (앱이 별도 키체인 그룹에 보관) — 연구 중 |
+
 #### 본인인증 / 가상자산
 
 | 앱 | 현재 회수 가능 | 연구 중 |
 |---|---|---|
 | **KTAuth (KT PASS)** | 디바이스 식별자 3종, 등록된 인증 방식 2가지 (Face ID + PIN, FIDO AAID 포함), 사용 timeline (Adobe Lifecycle), 13개 KT 서비스 catalog | 핵심 본인인증 PII (실명·생년월일·CI/DI) — 자체 암호화로 보호, 연구 중 |
+| **MMA (병무청)** | 생체인증 등록·활성 flag 2종, 앱 install/사용 cycle timeline, 디바이스 식별자 + 앱이 키체인에 보관한 사용자 UUID 3종 + 앱 RSA 공개키, 본인인증 cert 서버 세션 cookie | 본인 군 관련 핵심 PII (실명·군번·소속부대·병역단계 등은 디스크 부재 — 서버 위탁) — 연구 중 |
 | **Upbit (업비트)** | 사용자 모드 (게스트 vs 로그인), Apple App Attest 인증서 (iOS 버전 + Team ID), 위젯 BTC fetch 9회 흔적 | 거래 history / 자산 본문 — 연구 중 |
 
-64개 추가 앱 분석 진행 중 — 한국 사용자 일상 앱 풀 (모빌리티 / 숙박 / 미디어 / 생산성 / 추가 핀테크 / 추가 메신저 등).
+61개 추가 앱 분석 진행 중 — 한국 사용자 일상 앱 풀 (모빌리티 / 숙박 / 미디어 / 생산성 / 추가 핀테크 / 추가 메신저 등).
 
 ### iOS 버전별 재현 여부
 
@@ -235,7 +243,7 @@ Apple Bug Bounty 제출 예정으로 구체적인 접근 방향은 공개하지 
 
 ### 다음 목표
 
-- 미분석 앱 64개 추가 (한국 사용자 일상 앱 풀 — 모빌리티 / 숙박 / 미디어 / 생산성 / 추가 핀테크)
+- 미분석 앱 61개 추가 (한국 사용자 일상 앱 풀 — 모빌리티 / 숙박 / 미디어 / 생산성 / 추가 핀테크)
 - 다회차 분석을 통한 cross-domain pivoting 확장 (단일 앱 도메인이 보호되어도 시스템 도메인 + 다른 앱 백업에서 동일 사용자 활동 재구성)
 - 앱별 보호 paradigm 매트릭스 갱신 + 신규 paradigm 후보 식별
 - 반복 사용 분석 패턴의 도구화
